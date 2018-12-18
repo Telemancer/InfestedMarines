@@ -30,7 +30,6 @@ local kAnimationGraph = PrecacheAsset("models/marine/flamethrower/flamethrower_v
 local kFireLoopingSound = PrecacheAsset("sound/NS2.fev/marine/flamethrower/attack_loop")
 
 local kRange = kFlamethrowerRange
-local kUpgradedRange = kFlamethrowerUpgradedRange
 
 local kConeWidth = 0.34
 
@@ -159,7 +158,7 @@ function Flamethrower:CreatePrimaryAttackEffect(player)
 end
 
 function Flamethrower:GetRange()
-    return self.range
+    return kRange
 end
 
 function Flamethrower:GetViewModelName(sex, variant)
@@ -403,15 +402,15 @@ function Flamethrower:OnPrimaryAttack(player)
     self.ammo = self:GetMaxAmmo()
     
     if not self:GetIsReloading() then
-    
+        
         ClipWeapon.OnPrimaryAttack(self, player)
         
         if self:GetIsDeployed() and self:GetClip() > 0 and self:GetPrimaryAttacking() then
-        
+            
             if not self.createParticleEffects then
                 self:TriggerEffects("flamethrower_attack_start")
             end
-        
+            
             self.createParticleEffects = true
             
             if Server and not self.loopingFireSound:GetIsPlaying() then
@@ -421,7 +420,7 @@ function Flamethrower:OnPrimaryAttack(player)
         end
         
         if self.createParticleEffects and self:GetClip() == 0 then
-        
+            
             self.createParticleEffects = false
             
             if Server then
@@ -429,26 +428,27 @@ function Flamethrower:OnPrimaryAttack(player)
             end
             
         end
-    
+        
         -- Fire the cool flame effect periodically
         -- Don't crank the period too low - too many effects slows down the game a lot.
         if Client and self.createParticleEffects and self.lastAttackEffectTime + 0.5 < Shared.GetTime() then
             
             self:TriggerEffects("flamethrower_attack")
             self.lastAttackEffectTime = Shared.GetTime()
-
+            
         end
         
-    end
-    
-    -- handle dealing damage here.  The tag system was too restrictive for the flamethrower.
-    if Server then
-        local now = Shared.GetTime()
-        self.nextDamageTime = self.nextDamageTime or 0
-        if now > self.nextDamageTime then
-            self.nextDamageTime = now + Flamethrower.kDamageRate
-            ShootFlame(self, player)
+        -- handle dealing damage here.  The tag system was too restrictive for the flamethrower.
+        if Server then
+            local now = Shared.GetTime()
+            self.nextDamageTime = self.nextDamageTime or 0
+            if now > self.nextDamageTime then
+                self.nextDamageTime = now + Flamethrower.kDamageRate
+                ShootFlame(self, player)
+            end
+            
         end
+        
     end
     
 end
@@ -549,20 +549,6 @@ if Server then
     
     function Flamethrower:GetSendDeathMessageOverride()
         return false
-    end 
-    
-    function Flamethrower:OnProcessMove(input)
-        
-        ClipWeapon.OnProcessMove(self, input)
-        
-        local hasRangeTech = false
-        local parent = self:GetParent()
-        if parent then
-            hasRangeTech = GetHasTech(parent, kTechId.FlamethrowerRangeTech)
-        end
-        
-        self.range = hasRangeTech and kUpgradedRange or kRange
-
     end
     
 end

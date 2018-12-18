@@ -8,6 +8,6 @@
 
 kCommandStationBuildTime = 1
 kRifleDamage = 30
-kFlamethrowerDamage = 120 -- will kill in ~1 second.
+kFlamethrowerDamage = 180 -- will kill in ~1 second.
 
 kCystBuildTime = 0.0001

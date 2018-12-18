@@ -61,7 +61,7 @@ if Server then
 		oldCopyPlayerDataFrom(self, player)
 	end
 
-	local achScore = 500
+	local achScore = 350
 	local oldAddScore = ScoringMixin.AddScore
 	function ScoringMixin:AddScore(...)
 		local lastscore = self.score

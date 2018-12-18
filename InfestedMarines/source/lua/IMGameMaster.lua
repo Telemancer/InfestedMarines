@@ -319,9 +319,9 @@ local function PickInfected(self)
         self.initialInfected[infectedPlayers[i]:GetSteamId()] = true
     end
     
-    local numPlayers = GetGamerules().team1:GetNumPlayers()
-    for i=1, numPlayers do
-        local player = GetGamerules().team1:GetPlayer(i)
+    local nonInfectedPlayers = GetGamerules().team1:GetPlayers()
+    for i=1, #nonInfectedPlayers do
+        local player = nonInfectedPlayers[i]
         if player and not (player.GetIsInfected and player:GetIsInfected()) then
             player:TriggerEffects("initial_infestation_sound")
         end
