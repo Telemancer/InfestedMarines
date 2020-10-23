@@ -388,13 +388,14 @@ if Server then
                 -- reset teams
                 self:ResetGame()
                 
-               -- Send all players back to ready room so game doesn't auto start
-				for index, player in ientitylist(Shared.GetEntitiesWithClassname("Player")) do
-					if not player:GetIsSpectator() then
-						self::JoinTeam(player, kTeamReadyRoom, force)
+                -- Send all players back to ready room so game doesn't auto start
+		for index, player in ientitylist(Shared.GetEntitiesWithClassname("Player")) do
+		    if not player:GetIsSpectator() then
+		        self::JoinTeam(player, kTeamReadyRoom, force)
                         -- GetGamerules():JoinTeam(player, kTeamReadyRoom)
-					end
-				end
+		    end
+		end
+
             end
         end
     end
