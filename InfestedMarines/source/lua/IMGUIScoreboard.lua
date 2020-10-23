@@ -9,12 +9,21 @@
 --
 -- ========= For more information, visit us at http://www.unknownworlds.com =====================
 
+local kIconSize = Vector(40, 40, 0)
+local kIconOffset = Vector(-15, -10, 0)
 local kPlayerItemLeftMargin = 10
 local kPlayerNumberWidth = 20
 local kPlayerVoiceChatIconSize = 20
 local kPlayerBadgeIconSize = 20
 local kPlayerBadgeRightPadding = 4
 
+local kPlayerSkillIconSize = Vector(62, 20, 0)
+local kPlayerSkillIconTexture = PrecacheAsset("ui/skill_tier_icons.dds")
+local kPlayerSkillIconSizeOverride = Vector(58, 20, 0) -- slightly smaller so it doesn't overlap.
+
+local lastScoreboardVisState = false
+
+local kSteamProfileURL = "http://steamcommunity.com/profiles/"
 local kMinTruncatedNameLength = 8
 local kDeadColor = Color(1,0,0,1)
 local kInfestedColor = Color(0,1,0,1)
@@ -127,6 +136,9 @@ function GUIScoreboard:UpdateTeam(updateTeam)
     local deadString = Locale.ResolveString("STATUS_DEAD")
     local infestedString = Locale.ResolveString("STATUS_INFESTED") or "Infested"
     
+    local sumPlayerSkill = 0
+    local numPlayerSkill = 0
+    
     for index, player in ipairs(playerList) do
     
         local playerRecord = teamScores[currentPlayerIndex]
@@ -143,24 +155,13 @@ function GUIScoreboard:UpdateTeam(updateTeam)
         local ping = playerRecord.Ping
         local pingStr = tostring(ping)
         local currentPosition = Vector(player["Background"]:GetPosition())
-        local playerStatus = "  "
+        local playerStatus = ""
         local isSpectator = playerRecord.IsSpectator
         local isDead = isVisibleTeam and playerRecord.Status == deadString
         local isInfested = isVisibleTeam and not isDead and playerRecord.Status == infestedString
         local isSteamFriend = playerRecord.IsSteamFriend
         local playerSkill = playerRecord.Skill
         local commanderColor = GUIScoreboard.kCommanderFontColor
-        
-        if isVisibleTeam and teamNumber == kTeam1Index then
-            local currentTech = GetTechIdsFromBitMask(playerRecord.Tech)
-            if table.contains(currentTech, kTechId.Jetpack) then
-                if playerStatus ~= "" and playerStatus ~= " " then
-                    playerStatus = string.format("%s/%s", playerStatus, Locale.ResolveString("STATUS_JETPACK") )
-                else
-                    playerStatus = Locale.ResolveString("STATUS_JETPACK")
-                end
-            end
-        end
         
         if isCommander then
             score = "*"
@@ -196,6 +197,53 @@ function GUIScoreboard:UpdateTeam(updateTeam)
         elseif voiceChannel ~= VoiceChannel.Invalid then
             playerVoiceColor = teamColor
         end
+        
+        -- Set player skill icon
+        local skillIconOverrideSettings = CheckForSpecialBadgeRecipient(steamId)
+        if skillIconOverrideSettings then
+            
+            -- User has a special skill-tier icon tied to their steam Id.
+    
+            -- Reset the skill icon's texture coordinates to the default normalized coordinates (0, 0), (1, 1).
+            -- The shader depends on them being this way.
+            player.SkillIcon:SetTextureCoordinates(0, 0, 1, 1)
+    
+            -- Change the skill icon's shader to the one that will animate.
+            player.SkillIcon:SetShader(skillIconOverrideSettings.shader)
+            player.SkillIcon:SetTexture(skillIconOverrideSettings.tex)
+            player.SkillIcon:SetFloatParameter("frameCount", skillIconOverrideSettings.frameCount)
+    
+            -- Change the size so it doesn't touch the weapon name text.
+            player.SkillIcon:SetSize(kPlayerSkillIconSizeOverride * GUIScoreboard.kScalingFactor)
+    
+            -- Change the tooltip of the skill icon.
+            player.SkillIcon.tooltipText = skillIconOverrideSettings.tooltip
+            
+        else
+            
+            -- User has no special skill-tier icon.
+    
+            -- Reset the shader and texture back to the default one.
+            player.SkillIcon:SetShader("shaders/GUIBasic.surface_shader")
+            player.SkillIcon:SetTexture(kPlayerSkillIconTexture)
+            player.SkillIcon:SetSize(kPlayerSkillIconSize * GUIScoreboard.kScalingFactor)
+    
+            local isBot = steamId == 0
+            local skillTier, tierName, cappedSkill = GetPlayerSkillTier(playerSkill, isRookie, adagradSum, isBot)
+            player.SkillIcon.tooltipText = string.format(Locale.ResolveString("SKILLTIER_TOOLTIP"), Locale.ResolveString(tierName), skillTier)
+    
+            local iconIndex = skillTier + 2
+            player.SkillIcon:SetTexturePixelCoordinates(0, iconIndex * 32, 100, (iconIndex + 1) * 32 - 1)
+    
+            if cappedSkill then
+                sumPlayerSkill = sumPlayerSkill + cappedSkill
+                numPlayerSkill = numPlayerSkill + 1
+            end
+            
+        end
+		
+		numRookies = numRookies + (isRookie and 1 or 0)
+        numBots = numBots + (isBot and 1 or 0)
 
         player["Score"]:SetText(tostring(score))
         player["Kills"]:SetText(tostring(kills))
@@ -250,9 +298,13 @@ function GUIScoreboard:UpdateTeam(updateTeam)
         end
         
         local statusPos = ConditionalValue(GUIScoreboard.screenWidth < 1280, GUIScoreboard.kPlayerItemWidth + 30, (self:GetTeamItemWidth() - GUIScoreboard.kTeamColumnSpacingX * 10) + 60)
-        local playerStatus = player["Status"]:GetText()
-        if playerStatus == "-" or (playerStatus ~= Locale.ResolveString("STATUS_SPECTATOR") and teamNumber ~= 1 and teamNumber ~= 2) then
-            player["Status"]:SetText("")
+        if isSpectator then
+			playerStatus = "Spectator"
+			player["Status"]:SetText(playerStatus)
+            statusPos = statusPos + GUIScoreboard.kTeamColumnSpacingX * ConditionalValue(GUIScoreboard.screenWidth < 1280, 2.75, 1.75)
+        elseif playerStatus == "-" or (playerStatus ~= Locale.ResolveString("STATUS_SPECTATOR") and teamNumber ~= 1 and teamNumber ~= 2) then
+            playerStatus = ""
+            player["Status"]:SetText(playerStatus)
             statusPos = statusPos + GUIScoreboard.kTeamColumnSpacingX * ConditionalValue(GUIScoreboard.screenWidth < 1280, 2.75, 1.75)
         end
         
@@ -264,13 +316,17 @@ function GUIScoreboard:UpdateTeam(updateTeam)
         player["Name"]:SetPosition(Vector(pos, 0, 0))
         
         -- Icons on the right side of the player name
-        player["SteamFriend"]:SetIsVisible(playerRecord.IsSteamFriend)
+        player["SteamFriend"]:SetIsVisible(isSteamFriend)
         player["Voice"]:SetIsVisible(ChatUI_GetClientMuted(clientIndex))
         player["Text"]:SetIsVisible(ChatUI_GetSteamIdTextMuted(steamId))
         
         local nameRightPos = pos + (kPlayerBadgeRightPadding * GUIScoreboard.kScalingFactor)
         
         pos = (statusPos - kPlayerBadgeRightPadding) * GUIScoreboard.kScalingFactor
+        
+        if playerStatus ~= "" then
+            pos = (statusPos - kPlayerSkillIconSize.x + kPlayerItemLeftMargin) * GUIScoreboard.kScalingFactor
+        end
         
         for _, icon in ipairs(player["IconTable"]) do
             if icon:GetIsVisible() then
@@ -318,6 +374,12 @@ function GUIScoreboard:UpdateTeam(updateTeam)
                         hoverBadge = true
                         break
                     end
+                end
+                
+                local skillIcon = player.SkillIcon
+                if skillIcon:GetIsVisible() and GUIItemContainsPoint(skillIcon, mouseX, mouseY) then
+					self.badgeNameTooltip:SetText(skillIcon.tooltipText)
+                    hoverBadge = true
                 end
             
                 if canHighlight then
