@@ -250,9 +250,9 @@ end
 
 local function PerformNodeDamage(self)
     
-    if self.phase == IMGameMaster.kPhase.Scatter then
+    if self:GetPhase() == IMGameMaster.kPhase.Scatter then
         PerformScatterNodeDamage(self)
-    elseif self.phase == IMGameMaster.kPhase.Regroup then
+    elseif self:GetPhase() == IMGameMaster.kPhase.Regroup then
         PerformRegroupNodeDamage(self)
     else
         assert(false)
