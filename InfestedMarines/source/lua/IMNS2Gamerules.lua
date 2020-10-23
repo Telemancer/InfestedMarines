@@ -387,14 +387,6 @@ if Server then
                 
                 -- reset teams
                 self:ResetGame()
-                
-                -- Send all players back to ready room so game doesn't auto start
-		for index, player in ientitylist(Shared.GetEntitiesWithClassname("Player")) do
-		    if not player:GetIsSpectator() then
-		        self::JoinTeam(player, kTeamReadyRoom, force)
-                        -- GetGamerules():JoinTeam(player, kTeamReadyRoom)
-		    end
-		end
 
             end
         end
@@ -407,6 +399,13 @@ if Server then
         
         GetGameMaster():OnRoundEnd(...)
         self:ResetPlayerScores()
+		
+	-- Send all players back to ready room so game doesn't auto start
+	for index, player in ientitylist(Shared.GetEntitiesWithClassname("Player")) do
+	    if not player:GetIsSpectator() then
+	        self::JoinTeam(player, kTeamReadyRoom, force)
+            end
+	end
     end
 
     -- Alive players hear only alive players, dead players only hear dead players
