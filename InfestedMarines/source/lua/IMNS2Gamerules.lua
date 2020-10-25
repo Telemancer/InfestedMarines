@@ -401,8 +401,8 @@ if Server then
 	-- Send all players back to ready room so game doesn't auto start
 	for index, player in ientitylist(Shared.GetEntitiesWithClassname("Player")) do
 	    if player:GetTeamNumber() == kTeam1Index or player:GetTeamNumber() == kTeam2Index then
-	        self::JoinTeam(player, kTeamReadyRoom, force)
-            end
+	        self:JoinTeam(player, kTeamReadyRoom, true)
+	    end
 	end
     end
 
