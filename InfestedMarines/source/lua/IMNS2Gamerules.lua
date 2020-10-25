@@ -384,10 +384,8 @@ if Server then
         local state = self:GetGameState()
         if(state == kGameState.Team1Won or state == kGameState.Team2Won or state == kGameState.Draw) and (not self.concedeStartTime) then
             if self.timeSinceGameStateChanged >= kTimeToReadyRoom then
-                
                 -- reset teams
                 self:ResetGame()
-
             end
         end
     end
@@ -402,7 +400,7 @@ if Server then
 		
 	-- Send all players back to ready room so game doesn't auto start
 	for index, player in ientitylist(Shared.GetEntitiesWithClassname("Player")) do
-	    if not player:GetIsSpectator() then
+	    if player:GetTeamNumber() == kTeam1Index or player:GetTeamNumber() == kTeam2Index then
 	        self::JoinTeam(player, kTeamReadyRoom, force)
             end
 	end
