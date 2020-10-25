@@ -298,13 +298,11 @@ function GUIScoreboard:UpdateTeam(updateTeam)
         end
         
         local statusPos = ConditionalValue(GUIScoreboard.screenWidth < 1280, GUIScoreboard.kPlayerItemWidth + 30, (self:GetTeamItemWidth() - GUIScoreboard.kTeamColumnSpacingX * 10) + 60)
-        if isSpectator then
-			playerStatus = "Spectator"
-			player["Status"]:SetText(playerStatus)
+	if isSpectator and teamNumber ~= 1 and teamNumber ~= 2 and not isDead then
+	    player["Status"]:SetText("Spectator")
             statusPos = statusPos + GUIScoreboard.kTeamColumnSpacingX * ConditionalValue(GUIScoreboard.screenWidth < 1280, 2.75, 1.75)
-        elseif playerStatus == "-" or (playerStatus ~= Locale.ResolveString("STATUS_SPECTATOR") and teamNumber ~= 1 and teamNumber ~= 2) then
-            playerStatus = ""
-            player["Status"]:SetText(playerStatus)
+        else
+            player["Status"]:SetText("")
             statusPos = statusPos + GUIScoreboard.kTeamColumnSpacingX * ConditionalValue(GUIScoreboard.screenWidth < 1280, 2.75, 1.75)
         end
         
