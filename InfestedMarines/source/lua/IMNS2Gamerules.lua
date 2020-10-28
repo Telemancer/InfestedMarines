@@ -55,7 +55,7 @@ if Server then
     end
     
     function NS2Gamerules:GetPregameLength()
-        return 0
+        return 10
     end
     
     -- disable bots for this gamemode
@@ -367,7 +367,8 @@ if Server then
                 self.team2:PlayPrivateTeamSound(ConditionalValue(self.team2:GetTeamType() == kAlienTeamType, NS2Gamerules.kAlienStartSound, NS2Gamerules.kMarineStartSound))
                 
                 self:SetGameState(kGameState.Started)
-                self.sponitor:OnStartMatch()
+                -- temporarily disabled for throwing errors
+                -- self.sponitor:OnStartMatch()
                 self.playerRanking:StartGame()
                 
                 GetGameMaster():DoGameStart()
@@ -396,6 +397,13 @@ if Server then
         
         GetGameMaster():OnRoundEnd(...)
         self:ResetPlayerScores()
+		
+	-- Send all players back to ready room so game doesn't auto start
+	for index, player in ientitylist(Shared.GetEntitiesWithClassname("Player")) do
+	    if player:GetTeamNumber() == kTeam1Index or player:GetTeamNumber() == kTeam2Index then
+	        self:JoinTeam(player, kTeamReadyRoom, true)
+	    end
+	end
     end
 
     -- Alive players hear only alive players, dead players only hear dead players
