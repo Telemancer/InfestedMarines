@@ -241,9 +241,6 @@ function GUIScoreboard:UpdateTeam(updateTeam)
             end
             
         end
-		
-		numRookies = numRookies + (isRookie and 1 or 0)
-        numBots = numBots + (isBot and 1 or 0)
 
         player["Score"]:SetText(tostring(score))
         player["Kills"]:SetText(tostring(kills))
